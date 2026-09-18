@@ -1,0 +1,341 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Dashboard - NB BEADS STUDIO Admin{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block head %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Stat Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Revenue -->
+    <div
+        class="bg-slate-900 border border-slate-800 rounded-3xl p-6 relative overflow-hidden shadow-xl hover:border-purple-500/30 transition-all">
+        <div class="absolute -top-10 -right-10 w-28 h-28 bg-purple-500/10 rounded-full blur-2xl"></div>
+        <div class="flex items-center justify-between mb-4">
+            <span class="text-slate-400 font-medium text-sm">Total Revenue</span>
+            <div
+                class="w-10 h-10 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-xl flex items-center justify-center">
+                <i data-lucide="dollar-sign" class="w-5 h-5"></i>
+            </div>
+        </div>
+        <h3 class="text-3xl font-bold text-white tracking-tight">{{ stats.revenue }}</h3>
+        <p class="text-emerald-500 text-xs mt-2 flex items-center gap-1">
+            <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+            <span>+12.4% from last month</span>
+        </p>
+    </div>
+
+    <!-- Orders -->
+    <div
+        class="bg-slate-900 border border-slate-800 rounded-3xl p-6 relative overflow-hidden shadow-xl hover:border-blue-500/30 transition-all">
+        <div class="absolute -top-10 -right-10 w-28 h-28 bg-blue-500/10 rounded-full blur-2xl"></div>
+        <div class="flex items-center justify-between mb-4">
+            <span class="text-slate-400 font-medium text-sm">Total Orders</span>
+            <div
+                class="w-10 h-10 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center">
+                <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+            </div>
+        </div>
+        <h3 class="text-3xl font-bold text-white tracking-tight">{{ stats.orders }}</h3>
+        <p class="text-emerald-500 text-xs mt-2 flex items-center gap-1">
+            <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+            <span>+8.2% from last week</span>
+        </p>
+    </div>
+
+    <!-- Products -->
+    <div
+        class="bg-slate-900 border border-slate-800 rounded-3xl p-6 relative overflow-hidden shadow-xl hover:border-amber-500/30 transition-all">
+        <div class="absolute -top-10 -right-10 w-28 h-28 bg-amber-500/10 rounded-full blur-2xl"></div>
+        <div class="flex items-center justify-between mb-4">
+            <span class="text-slate-400 font-medium text-sm">Total Products</span>
+            <div
+                class="w-10 h-10 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl flex items-center justify-center">
+                <i data-lucide="package" class="w-5 h-5"></i>
+            </div>
+        </div>
+        <h3 class="text-3xl font-bold text-white tracking-tight">{{ stats.products }}</h3>
+        <p class="text-slate-500 text-xs mt-2 flex items-center gap-1">
+            <i data-lucide="info" class="w-3.5 h-3.5"></i>
+            <span>Across {{ stats.categories }} categories</span>
+        </p>
+    </div>
+
+    <!-- Users -->
+    <div
+        class="bg-slate-900 border border-slate-800 rounded-3xl p-6 relative overflow-hidden shadow-xl hover:border-rose-500/30 transition-all">
+        <div class="absolute -top-10 -right-10 w-28 h-28 bg-rose-500/10 rounded-full blur-2xl"></div>
+        <div class="flex items-center justify-between mb-4">
+            <span class="text-slate-400 font-medium text-sm">Total Customers</span>
+            <div
+                class="w-10 h-10 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl flex items-center justify-center">
+                <i data-lucide="users" class="w-5 h-5"></i>
+            </div>
+        </div>
+        <h3 class="text-3xl font-bold text-white tracking-tight">{{ stats.users }}</h3>
+        <p class="text-emerald-500 text-xs mt-2 flex items-center gap-1">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+            <span>+5 new signs today</span>
+        </p>
+</div>
+
+<!-- Catalog Mode Control Banner -->
+<div class="bg-gradient-to-r {% if hide_price_and_cart %}from-amber-950/40 via-slate-900 to-slate-900 border-amber-500/30{% else %}from-slate-900 via-slate-900 to-slate-900 border-slate-800{% endif %} border rounded-3xl p-6 mb-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all" id="dashboard-catalog-card">
+    <div class="flex items-start gap-4">
+        <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 {% if hide_price_and_cart %}bg-amber-500/20 text-amber-400 border border-amber-500/30{% else %}bg-purple-500/10 text-purple-400 border border-purple-500/20{% endif %}" id="dashboard-catalog-icon">
+            <i data-lucide="tag" class="w-6 h-6"></i>
+        </div>
+        <div>
+            <div class="flex items-center gap-2.5">
+                <h4 class="text-white text-base font-bold">Storefront Catalog Mode</h4>
+                <span id="dashboard-catalog-badge" class="text-xs px-2.5 py-0.5 rounded-full font-semibold {% if hide_price_and_cart %}bg-amber-500/20 text-amber-300 border border-amber-500/30{% else %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30{% endif %}">
+                    {% if hide_price_and_cart %}Prices & Cart Disabled{% else %}Prices & Cart Active{% endif %}
+                </span>
+            </div>
+            <p class="text-slate-400 text-xs mt-1 max-w-xl" id="dashboard-catalog-desc">
+                {% if hide_price_and_cart %}
+                Catalog Mode is currently <strong>ACTIVE</strong>. All product prices and the add to cart functionality are disabled across the entire website.
+                {% else %}
+                Standard E-commerce mode is active. Customers can view all price tags, add items to cart, and checkout.
+                {% endif %}
+            </p>
+        </div>
+    </div>
+    <div class="flex items-center gap-3 shrink-0">
+        <button type="button" onclick="togglePriceAndCart()"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md {% if hide_price_and_cart %}bg-amber-500 hover:bg-amber-400 text-black{% else %}bg-slate-800 hover:bg-slate-700 text-white border border-slate-700{% endif %}"
+            id="dashboard-catalog-btn">
+            <i data-lucide="power" class="w-4 h-4"></i>
+            <span id="dashboard-catalog-btn-text">{% if hide_price_and_cart %}Turn Store Mode ON (Show Prices){% else %}Enable Catalog Mode (Hide Prices){% endif %}</span>
+        </button>
+    </div>
+</div>
+
+<!-- Secondary Stats (Wishlist & Cart activity) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex items-center justify-between shadow-xl">
+        <div class="flex items-center gap-4">
+            <div
+                class="w-12 h-12 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center">
+                <i data-lucide="heart" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h4 class="text-slate-400 text-sm font-medium">Items in Customer Wishlists</h4>
+                <p class="text-slate-500 text-xs mt-1">High interest products to watch</p>
+            </div>
+        </div>
+        <span class="text-3xl font-bold text-white">{{ stats.wishlist }}</span>
+    </div>
+
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex items-center justify-between shadow-xl">
+        <div class="flex items-center gap-4">
+            <div
+                class="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center">
+                <i data-lucide="shopping-cart" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h4 class="text-slate-400 text-sm font-medium">Items Currently in Carts</h4>
+                <p class="text-slate-500 text-xs mt-1">Pending checkouts/abandoned rate</p>
+            </div>
+        </div>
+        <span class="text-3xl font-bold text-white">{{ stats.cart }}</span>
+    </div>
+</div>
+
+<!-- Chart & Latest Info Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Chart Column -->
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 lg:col-span-2 shadow-xl">
+        <h3 class="text-lg font-bold text-white mb-6">Sales Performance Trends</h3>
+        <div class="h-80 w-full flex items-center justify-center">
+            <canvas id="salesChart" class="w-full h-full"></canvas>
+        </div>
+    </div>
+
+    <!-- Recent Products Column -->
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col">
+        <h3 class="text-lg font-bold text-white mb-6">Recent Products Added</h3>
+        <div class="space-y-4 flex-1">
+            {% for prod in recent_products %}
+            <div
+                class="flex items-center justify-between p-3 rounded-2xl bg-slate-950/40 border border-slate-800/40 hover:border-slate-800 transition-colors">
+                <div class="flex items-center gap-3">
+                    <img src="{{ prod.thumbnail }}" alt="{{ prod.name }}"
+                        class="w-12 h-12 rounded-xl object-cover border border-slate-800">
+                    <div>
+                        <h4 class="text-sm font-semibold text-white truncate w-32 md:w-40">{{ prod.name }}</h4>
+                        <p class="text-xs text-slate-500 mt-1">{{ prod.category }}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm font-bold text-purple-400">${{ prod.sale_price }}</p>
+                    <p class="text-[10px] text-slate-500 mt-1">Stock: {{ prod.stock }}</p>
+                </div>
+            </div>
+            {% else %}
+            <p class="text-slate-500 text-sm text-center py-12">No products added yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Latest Orders Table -->
+<div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 mt-8 shadow-xl">
+    <div class="flex items-center justify-between mb-6">
+        <h3 class="text-lg font-bold text-white">Latest Customer Orders</h3>
+        <a href="/admin/orders" class="text-sm text-purple-400 hover:text-purple-300 font-semibold transition-all">View
+            All Orders →</a>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-slate-800 text-slate-400 text-xs font-semibold uppercase">
+                    <th class="pb-3 pl-4">Order ID</th>
+                    <th class="pb-3">Customer</th>
+                    <th class="pb-3">Items Count</th>
+                    <th class="pb-3">Total Amount</th>
+                    <th class="pb-3">Payment</th>
+                    <th class="pb-3">Shipping Status</th>
+                    <th class="pb-3 pr-4 text-right">Placed At</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/40 text-sm text-slate-300">
+                {% for order in latest_orders %}
+                <tr class="hover:bg-slate-800/20 transition-all">
+                    <td class="py-4 pl-4 font-mono text-xs text-slate-400">#{{ order.id|string|truncate(8, True, '') }}
+                    </td>
+                    <td class="py-4 font-semibold text-white">{{ order.shipping_address.name }}</td>
+                    <td class="py-4">{{ order.items|length }} items</td>
+                    <td class="py-4 font-bold text-purple-400">${{ order.total }}</td>
+                    <td class="py-4">
+                        {% if order.payment_status == 'paid' %}
+                        <span
+                            class="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-400 text-xs font-medium px-2.5 py-1 rounded-full border border-emerald-500/20">Paid</span>
+                        {% else %}
+                        <span
+                            class="inline-flex items-center gap-1 bg-amber-500/10 text-amber-400 text-xs font-medium px-2.5 py-1 rounded-full border border-amber-500/20">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-4">
+                        {% if order.shipping_status == 'pending' %}
+                        <span
+                            class="inline-flex items-center bg-slate-500/10 text-slate-400 text-xs font-medium px-2.5 py-1 rounded-full border border-slate-500/20">Pending</span>
+                        {% elif order.shipping_status == 'delivered' %}
+                        <span
+                            class="inline-flex items-center bg-emerald-500/10 text-emerald-400 text-xs font-medium px-2.5 py-1 rounded-full border border-emerald-500/20">Delivered</span>
+                        {% elif order.shipping_status == 'cancelled' %}
+                        <span
+                            class="inline-flex items-center bg-red-500/10 text-red-400 text-xs font-medium px-2.5 py-1 rounded-full border border-red-500/20">Cancelled</span>
+                        {% else %}
+                        <span
+                            class="inline-flex items-center bg-indigo-500/10 text-indigo-400 text-xs font-medium px-2.5 py-1 rounded-full border border-indigo-500/20">{{
+                            order.shipping_status|capitalize }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-4 pr-4 text-right text-xs text-slate-500">{{ order.created_at.strftime('%Y-%m-%d
+                        %H:%M') }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="py-8 text-center text-slate-500">No orders placed yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Create Chart.js line chart for sales analytics
+    document.addEventListener("DOMContentLoaded", () => {
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, 'rgba(168, 85, 247, 0.4)');
+        gradient.addColorStop(1, 'rgba(168, 85, 247, 0.0)');
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Monthly Revenue ($)',
+                    data: [1200, 1900, 3000, 5000, 4200, 6800, 8200, 7500, 9100, 11000, 9500, 14000],
+                    borderColor: '#a855f7',
+                    borderWidth: 3,
+                    fill: true,
+                    backgroundColor: gradient,
+                    tension: 0.4,
+                    pointBackgroundColor: '#a855f7',
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        },
+                        ticks: {
+                            color: '#64748b'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        },
+                        ticks: {
+                            color: '#64748b'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Listen to catalog mode changes from layout header toggle
+        window.addEventListener('catalogModeChanged', (e) => {
+            const isHidden = e.detail.hide_price_and_cart;
+            const card = document.getElementById('dashboard-catalog-card');
+            const icon = document.getElementById('dashboard-catalog-icon');
+            const badge = document.getElementById('dashboard-catalog-badge');
+            const desc = document.getElementById('dashboard-catalog-desc');
+            const btn = document.getElementById('dashboard-catalog-btn');
+            const btnText = document.getElementById('dashboard-catalog-btn-text');
+
+            if (!card) return;
+            if (isHidden) {
+                card.className = 'bg-gradient-to-r from-amber-950/40 via-slate-900 to-slate-900 border-amber-500/30 border rounded-3xl p-6 mb-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all';
+                if (icon) icon.className = 'w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-amber-500/20 text-amber-400 border border-amber-500/30';
+                if (badge) {
+                    badge.className = 'text-xs px-2.5 py-0.5 rounded-full font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30';
+                    badge.textContent = 'Prices & Cart Disabled';
+                }
+                if (desc) desc.innerHTML = 'Catalog Mode is currently <strong>ACTIVE</strong>. All product prices and the add to cart functionality are disabled across the entire website.';
+                if (btn) btn.className = 'inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md bg-amber-500 hover:bg-amber-400 text-black';
+                if (btnText) btnText.textContent = 'Turn Store Mode ON (Show Prices)';
+            } else {
+                card.className = 'bg-gradient-to-r from-slate-900 via-slate-900 to-slate-900 border-slate-800 border rounded-3xl p-6 mb-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all';
+                if (icon) icon.className = 'w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-purple-500/10 text-purple-400 border border-purple-500/20';
+                if (badge) {
+                    badge.className = 'text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+                    badge.textContent = 'Prices & Cart Active';
+                }
+                if (desc) desc.textContent = 'Standard E-commerce mode is active. Customers can view all price tags, add items to cart, and checkout.';
+                if (btn) btn.className = 'inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md bg-slate-800 hover:bg-slate-700 text-white border border-slate-700';
+                if (btnText) btnText.textContent = 'Enable Catalog Mode (Hide Prices)';
+            }
+        });
+    });
+</script>
+{% endblock %}

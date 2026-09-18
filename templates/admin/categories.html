@@ -1,0 +1,217 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Manage Categories - NB BEADS STUDIO Admin{% endblock %}
+{% block page_title %}Category Management{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Category Form Column (Add Category) -->
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl h-fit">
+        <h3 class="text-lg font-bold text-white mb-6 border-b border-slate-800/60 pb-3" id="form-title">Create Category
+        </h3>
+
+        <form id="categoryForm" class="space-y-4">
+            <input type="hidden" id="category_id" name="category_id" value="">
+
+            <div>
+                <label for="name" class="block text-sm font-semibold text-slate-300 mb-2">Category Name</label>
+                <input type="text" id="name" name="name" required oninput="generateSlug()"
+                    class="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 focus:outline-none text-white px-4 py-3 rounded-xl transition-all"
+                    placeholder="e.g. Fine Jewellery">
+            </div>
+
+            <div>
+                <label for="slug" class="block text-sm font-semibold text-slate-300 mb-2">Slug</label>
+                <input type="text" id="slug" name="slug" required
+                    class="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 focus:outline-none text-white px-4 py-3 rounded-xl transition-all"
+                    placeholder="fine-jewellery">
+            </div>
+
+            <div>
+                <label for="parent_id" class="block text-sm font-semibold text-slate-300 mb-2">Parent Category
+                    (Optional)</label>
+                <select id="parent_id" name="parent_id"
+                    class="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 focus:outline-none text-slate-400 px-4 py-3 rounded-xl transition-all">
+                    <option value="">None (Top Level)</option>
+                    {% for cat in categories %}
+                    {% if not cat.parent_id %}
+                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="icon" class="block text-sm font-semibold text-slate-300 mb-2">Icon Name</label>
+                <input type="text" id="icon" name="icon"
+                    class="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 focus:outline-none text-white px-4 py-3 rounded-xl transition-all"
+                    placeholder="e.g. gem, heart, shirt, gift">
+            </div>
+
+            <div>
+                <label for="image" class="block text-sm font-semibold text-slate-300 mb-2">Image URL (Optional)</label>
+                <input type="text" id="image" name="image"
+                    class="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 focus:outline-none text-white px-4 py-3 rounded-xl transition-all"
+                    placeholder="https://unsplash.com/...">
+            </div>
+
+            <div>
+                <label for="status" class="block text-sm font-semibold text-slate-300 mb-2">Status</label>
+                <select id="status" name="status"
+                    class="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 focus:outline-none text-slate-400 px-4 py-3 rounded-xl transition-all">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button type="submit" id="submit-btn"
+                    class="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-purple-500/20 transition-all">
+                    Create
+                </button>
+                <button type="button" id="cancel-btn" onclick="resetForm()"
+                    class="hidden px-4 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl transition-all border border-slate-700">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Category List Column -->
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 lg:col-span-2 shadow-xl">
+        <h3 class="text-lg font-bold text-white mb-6 border-b border-slate-800/60 pb-3">Available Categories</h3>
+
+        <div class="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+            {% for cat in categories %}
+            <div
+                class="flex items-center justify-between p-4 bg-slate-950/40 border border-slate-800/60 rounded-2xl hover:border-slate-700 transition-all {% if cat.parent_id %}ml-8 border-l-2 border-l-purple-500/40{% endif %}">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-10 h-10 bg-slate-900 border border-slate-850 rounded-xl flex items-center justify-center text-purple-400">
+                        <i data-lucide="{{ cat.icon or 'tag' }}" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white text-sm flex items-center gap-2">
+                            <span>{{ cat.name }}</span>
+                            {% if cat.status == 'active' %}
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            {% else %}
+                            <span class="w-2 h-2 rounded-full bg-slate-600"></span>
+                            {% endif %}
+                        </h4>
+                        <p class="text-xs text-slate-500 font-mono mt-0.5">{{ cat.slug }}</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                    <button
+                        onclick="editCategory('{{ cat.id }}', '{{ cat.name }}', '{{ cat.slug }}', '{{ cat.parent_id or '' }}', '{{ cat.icon or '' }}', '{{ cat.image or '' }}', '{{ cat.status }}')"
+                        class="p-2 hover:bg-purple-500/10 text-purple-400 rounded-xl transition-all" title="Edit">
+                        <i data-lucide="edit-3" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="deleteCategory('{{ cat.id }}')"
+                        class="p-2 hover:bg-red-500/10 text-red-400 rounded-xl transition-all" title="Delete">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <p class="text-slate-500 text-sm text-center py-12">No categories created yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // Automatically generate slug
+    function generateSlug() {
+        const nameVal = document.getElementById("name").value;
+        const slugVal = nameVal.toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-');
+        document.getElementById("slug").value = slugVal;
+    }
+
+    // Edit button filler
+    function editCategory(id, name, slug, parentId, icon, image, status) {
+        document.getElementById("category_id").value = id;
+        document.getElementById("name").value = name;
+        document.getElementById("slug").value = slug;
+        document.getElementById("parent_id").value = parentId;
+        document.getElementById("icon").value = icon;
+        document.getElementById("image").value = image;
+        document.getElementById("status").value = status;
+
+        document.getElementById("form-title").innerText = "Edit Category";
+        document.getElementById("submit-btn").innerText = "Update";
+        document.getElementById("cancel-btn").classList.remove("hidden");
+    }
+
+    // Reset Form
+    function resetForm() {
+        document.getElementById("category_id").value = "";
+        document.getElementById("categoryForm").reset();
+        document.getElementById("form-title").innerText = "Create Category";
+        document.getElementById("submit-btn").innerText = "Create";
+        document.getElementById("cancel-btn").classList.add("hidden");
+    }
+
+    // Submit AJAX create/update
+    document.getElementById("categoryForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const catId = document.getElementById("category_id").value;
+
+        const payload = {
+            name: document.getElementById("name").value,
+            slug: document.getElementById("slug").value,
+            parent_id: document.getElementById("parent_id").value || null,
+            icon: document.getElementById("icon").value || null,
+            image: document.getElementById("image").value || null,
+            status: document.getElementById("status").value
+        };
+
+        const url = catId ? `/api/categories/${catId}` : "/api/categories";
+        const method = catId ? "PUT" : "POST";
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(catId ? "Category updated successfully!" : "Category created successfully!");
+                window.location.reload();
+            } else {
+                alert(data.message || "Failed to save category.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Error sending request to server.");
+        }
+    });
+
+    // Delete Category AJAX
+    async function deleteCategory(id) {
+        if (!confirm("Are you sure you want to permanently delete this category?")) return;
+        try {
+            const res = await fetch(`/api/categories/${id}`, {
+                method: "DELETE"
+            });
+            const data = await res.json();
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert(data.message || "Failed to delete category.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Error deleting category.");
+        }
+    }
+</script>
+{% endblock %}

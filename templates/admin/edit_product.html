@@ -1,0 +1,374 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Edit Product - NB BEADS STUDIO Admin{% endblock %}
+{% block page_title %}Edit Product Details{% endblock %}
+
+{% block content %}
+<div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 max-w-4xl mx-auto shadow-xl">
+    <div class="mb-6 flex items-center justify-between border-b border-slate-800/60 pb-4">
+        <h3 class="text-lg font-bold text-white">General Information</h3>
+        <a href="/admin/products" class="text-xs text-slate-400 hover:text-white font-medium flex items-center gap-1.5">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Back to Products</span>
+        </a>
+    </div>
+
+    <form id="productForm" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Name -->
+            <div>
+                <label for="name" class="block text-sm font-semibold text-slate-300 mb-2">Product Name</label>
+                <input type="text" id="name" name="name" value="{{ product.name }}" required oninput="generateSlug()"
+                    class="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 focus:outline-none text-white px-4 py-3 rounded-xl transition-all"
+                    placeholder="Enter product title">
+            </div>
+
+            <!-- Slug -->
+            <div>
+                <label for="slug" class="block text-sm font-semibold text-slate-300 mb-2">Slug</label>
+                <input type="text" id="slug" name="slug" value="{{ product.slug }}" required
+                    class="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 focus:outline-none text-white px-4 py-3 rounded-xl transition-all"
+                    placeholder="product-friendly-slug">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Category -->
+            <div>
+                <label for="category" class="block text-sm font-semibold text-slate-300 mb-2">Category</label>
+                <select id="category" name="category" required
+                    class="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 focus:outline-none text-slate-400 px-4 py-3 rounded-xl transition-all">
+                    {% for cat in categories %}
+                    <option value="{{ cat.name }}" {% if product.category==cat.name %}selected{% endif %}>{{ cat.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- SKU -->
+            <div>
+                <label for="sku" class="block text-sm font-semibold text-slate-300 mb-2">SKU</label>
+                <input type="text" id="sku" name="sku" value="{{ product.sku }}" required
+                    class="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 focus:outline-none text-white px-4 py-3 rounded-xl transition-all"
+                    placeholder="e.g. JW-GOLD-001">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- MRP -->
+            <div>
+                <label for="mrp" class="block text-sm font-semibold text-slate-300 mb-2">MRP ($)</label>
+                <input type="number" id="mrp" name="mrp" step="0.01" min="0" value="{{ product.mrp }}" required
+                    class="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 focus:outline-none text-white px-4 py-3 rounded-xl transition-all"
+                    placeholder="0.00">
+            </div>
+
+            <!-- Sale Price -->
+            <div>
+                <label for="sale_price" class="block text-sm font-semibold text-slate-300 mb-2">Sale Price ($)</label>
+                <input type="number" id="sale_price" name="sale_price" step="0.01" min="0"
+                    value="{{ product.sale_price }}" required
+                    class="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 focus:outline-none text-white px-4 py-3 rounded-xl transition-all"
+                    placeholder="0.00">
+            </div>
+
+            <!-- Stock -->
+            <div>
+                <label for="stock" class="block text-sm font-semibold text-slate-300 mb-2">Stock Level</label>
+                <input type="number" id="stock" name="stock" min="0" value="{{ product.stock }}" required
+                    class="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 focus:outline-none text-white px-4 py-3 rounded-xl transition-all"
+                    placeholder="0">
+            </div>
+        </div>
+
+        <!-- Description -->
+        <div>
+            <label for="description" class="block text-sm font-semibold text-slate-300 mb-2">Full Description</label>
+            <textarea id="description" name="description" rows="4" required
+                class="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 focus:outline-none text-white px-4 py-3 rounded-xl transition-all"
+                placeholder="Product description...">{{ product.description }}</textarea>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Brand / Short Description -->
+            <div>
+                <label for="brand" class="block text-sm font-semibold text-slate-300 mb-2">Brand</label>
+                <input type="text" id="brand" name="brand" value="{{ product.brand or '' }}"
+                    class="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 focus:outline-none text-white px-4 py-3 rounded-xl transition-all"
+                    placeholder="NB BEADS STUDIO Brand">
+            </div>
+            <div>
+                <label for="short_description" class="block text-sm font-semibold text-slate-300 mb-2">Short
+                    Description</label>
+                <input type="text" id="short_description" name="short_description"
+                    value="{{ product.short_description or '' }}"
+                    class="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 focus:outline-none text-white px-4 py-3 rounded-xl transition-all"
+                    placeholder="Short highlight text">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 pt-4">
+            <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" name="featured"
+                    class="w-5 h-5 rounded border-slate-800 accent-purple-600 bg-slate-950" {% if product.featured
+                    %}checked{% endif %}>
+                <span class="text-sm font-semibold text-slate-300">Featured</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" name="trending"
+                    class="w-5 h-5 rounded border-slate-800 accent-purple-600 bg-slate-950" {% if product.trending
+                    %}checked{% endif %}>
+                <span class="text-sm font-semibold text-slate-300">Trending</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" name="best_seller"
+                    class="w-5 h-5 rounded border-slate-800 accent-purple-600 bg-slate-950" {% if product.best_seller
+                    %}checked{% endif %}>
+                <span class="text-sm font-semibold text-slate-300">Best Seller</span>
+            </label>
+            <div>
+                <select name="status"
+                    class="w-full bg-slate-950/60 border border-slate-800 focus:outline-none text-slate-300 px-3 py-2.5 rounded-xl text-sm">
+                    <option value="active" {% if product.status=='active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if product.status=='inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Image Upload -->
+        <div class="border-t border-slate-800/60 pt-6">
+            <h4 class="text-sm font-semibold text-slate-300 mb-4">Product Images & Upload</h4>
+
+            <div id="dropzone"
+                class="border-2 border-dashed border-slate-800 hover:border-purple-500 rounded-3xl p-8 text-center cursor-pointer transition-all bg-slate-950/30">
+                <i data-lucide="cloud-lightning" class="w-10 h-10 text-slate-500 mx-auto mb-3"></i>
+                <p class="text-sm text-slate-300 font-semibold mb-1">Drag and drop new images here, or click to upload
+                </p>
+                <p class="text-xs text-slate-500 mb-4">Supports JPG, PNG, WEBP (Max 10MB)</p>
+                <button type="button"
+                    class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold transition-all">
+                    Browse Image Files
+                </button>
+                <input type="file" id="fileInput" multiple accept="image/*" class="hidden">
+            </div>
+
+            <!-- URL paste option -->
+            <div
+                class="mt-4 p-4 rounded-2xl bg-slate-950/40 border border-slate-800 flex flex-col sm:flex-row gap-3 items-center">
+                <span class="text-xs text-slate-400 whitespace-nowrap font-medium flex items-center gap-1.5">
+                    <i data-lucide="link" class="w-4 h-4 text-purple-400"></i> Or Paste Image URL:
+                </span>
+                <input type="url" id="imageUrlInput" placeholder="https://images.unsplash.com/..."
+                    class="flex-1 w-full bg-slate-900 border border-slate-700 text-white text-xs px-3 py-2 rounded-xl focus:border-purple-500 focus:outline-none">
+                <button type="button" onclick="addImageUrl()"
+                    class="w-full sm:w-auto px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded-xl transition-all whitespace-nowrap">
+                    Add from URL
+                </button>
+            </div>
+
+            <!-- Upload Previews -->
+            <div id="previewContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+                <!-- Add existing items -->
+                {% for url in product.gallery_images %}
+                {% set loop_idx = loop.index0 %}
+                <div id="prev-exist-{{ loop_idx }}"
+                    class="relative aspect-square rounded-2xl bg-slate-950/60 border border-slate-800 overflow-hidden">
+                    <img src="{{ url }}" class="w-full h-full object-cover rounded-2xl">
+                    <button type="button" onclick="deleteExistingPreview('prev-exist-{{ loop_idx }}', '{{ url }}')"
+                        class="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-white rounded-full p-1.5 shadow transition-all hover:scale-115">
+                        <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button type="submit"
+            class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold py-4 rounded-xl shadow-lg shadow-purple-500/20 transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2">
+            <i data-lucide="check-circle" class="w-5 h-5"></i>
+            <span>Update Product</span>
+        </button>
+    </form>
+</div>
+
+<script>
+    // Automatically generate slug
+    function generateSlug() {
+        const nameVal = document.getElementById("name").value;
+        const slugVal = nameVal.toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '') // remove special chars
+            .replace(/\s+/g, '-')          // replace spaces with -
+            .replace(/-+/g, '-');         // remove duplicate -
+        document.getElementById("slug").value = slugVal;
+    }
+
+    const dropzone = document.getElementById("dropzone");
+    const fileInput = document.getElementById("fileInput");
+    const previewContainer = document.getElementById("previewContainer");
+
+    // Parse existing gallery images from server render
+    let uploadedImages = [];
+    {% for url in product.gallery_images %}
+    uploadedImages.push("{{ url }}");
+    {% endfor %}
+
+    // Trigger click on input
+    dropzone.addEventListener("click", () => fileInput.click());
+
+    // Drag-and-drop events
+    dropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropzone.classList.add("border-purple-500", "bg-purple-950/10");
+    });
+
+    dropzone.addEventListener("dragleave", () => {
+        dropzone.classList.remove("border-purple-500", "bg-purple-950/10");
+    });
+
+    dropzone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropzone.classList.remove("border-purple-500", "bg-purple-950/10");
+        const files = e.dataTransfer.files;
+        handleFiles(files);
+    });
+
+    fileInput.addEventListener("change", (e) => {
+        const files = e.target.files;
+        handleFiles(files);
+    });
+
+    // Upload files to API
+    async function handleFiles(files) {
+        for (const file of files) {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            // Create a preview placeholder
+            const previewId = "prev-" + Math.random().toString(36).substr(2, 9);
+            addPlaceholderPreview(previewId);
+
+            try {
+                const res = await fetch("/api/upload", {
+                    method: "POST",
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    uploadedImages.push(data.data.url);
+                    updatePreviewItem(previewId, data.data.url);
+                } else {
+                    document.getElementById(previewId).remove();
+                    alert(data.message || "Failed to upload image.");
+                }
+            } catch (e) {
+                console.error(e);
+                document.getElementById(previewId).remove();
+                alert("Error uploading file.");
+            }
+        }
+    }
+
+    async function addImageUrl() {
+        const input = document.getElementById("imageUrlInput");
+        const url = input.value.trim();
+        if (!url) {
+            alert("Please paste an image URL");
+            return;
+        }
+
+        const previewId = "prev-" + Math.random().toString(36).substr(2, 9);
+        addPlaceholderPreview(previewId);
+
+        try {
+            const res = await fetch("/api/admin/upload-url", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url })
+            });
+            const data = await res.json();
+            const finalUrl = (data.success && data.data && data.data.url) ? data.data.url : url;
+            uploadedImages.push(finalUrl);
+            updatePreviewItem(previewId, finalUrl);
+            input.value = "";
+        } catch (e) {
+            uploadedImages.push(url);
+            updatePreviewItem(previewId, url);
+            input.value = "";
+        }
+    }
+
+    function addPlaceholderPreview(id) {
+        const div = document.createElement("div");
+        div.id = id;
+        div.className = "relative aspect-square rounded-2xl bg-slate-950/60 border border-slate-800 flex items-center justify-center overflow-hidden animate-pulse";
+        div.innerHTML = `<span class="text-xs text-slate-600 font-medium">Uploading...</span>`;
+        previewContainer.appendChild(div);
+    }
+
+    function updatePreviewItem(id, url) {
+        const div = document.getElementById(id);
+        div.classList.remove("animate-pulse");
+        div.innerHTML = `
+            <img src="${url}" class="w-full h-full object-cover rounded-2xl">
+            <button type="button" onclick="deleteExistingPreview('${id}', '${url}')" 
+                class="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-white rounded-full p-1.5 shadow transition-all hover:scale-115">
+                <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+            </button>
+        `;
+        lucide.createIcons();
+    }
+
+    function deleteExistingPreview(id, url) {
+        uploadedImages = uploadedImages.filter(img => img !== url);
+        document.getElementById(id).remove();
+    }
+
+    // Submit form AJAX
+    document.getElementById("productForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const formEl = e.target;
+        const formData = new FormData(formEl);
+
+        // Build JSON payload
+        const payload = {
+            name: formData.get("name"),
+            slug: formData.get("slug"),
+            category: formData.get("category"),
+            sku: formData.get("sku"),
+            mrp: parseFloat(formData.get("mrp")),
+            sale_price: parseFloat(formData.get("sale_price")),
+            stock: parseInt(formData.get("stock")),
+            description: formData.get("description"),
+            brand: formData.get("brand") || "NB BEADS STUDIO Premium",
+            short_description: formData.get("short_description") || "",
+            featured: formEl.elements["featured"].checked,
+            trending: formEl.elements["trending"].checked,
+            best_seller: formEl.elements["best_seller"].checked,
+            status: formData.get("status"),
+            thumbnail: uploadedImages[0] || "",
+            gallery_images: uploadedImages
+        };
+
+        try {
+            const res = await fetch("/api/products/{{ product.id }}", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert("Product updated successfully!");
+                window.location.href = "/admin/products";
+            } else {
+                alert(data.message || "Failed to update product.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Error sending request to server.");
+        }
+    });
+</script>
+{% endblock %}

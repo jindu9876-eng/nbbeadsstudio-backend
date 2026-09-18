@@ -1,0 +1,139 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Manage Customers - NB BEADS STUDIO Admin{% endblock %}
+{% block page_title %}Customer Accounts{% endblock %}
+
+{% block content %}
+<div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-slate-800 text-slate-400 text-xs font-semibold uppercase">
+                    <th class="pb-3 pl-4">Customer</th>
+                    <th class="pb-3">Contact</th>
+                    <th class="pb-3">Shipping Address</th>
+                    <th class="pb-3">Status</th>
+                    <th class="pb-3">Member Since</th>
+                    <th class="pb-3 pr-4 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/40 text-sm text-slate-300">
+                {% for user in users %}
+                <tr id="row-{{ user.id }}" class="hover:bg-slate-800/20 transition-all align-top">
+                    <!-- Customer Info -->
+                    <td class="py-4 pl-4 font-semibold text-white">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-10 h-10 bg-slate-950/60 rounded-xl flex items-center justify-center border border-slate-850 text-slate-400">
+                                <i data-lucide="user" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white text-sm">{{ user.name }}</h4>
+                                <p class="text-xs text-slate-500 font-mono mt-0.5">ID: #{{ user.id|string|truncate(12,
+                                    True, '') }}</p>
+                            </div>
+                        </div>
+                    </td>
+
+                    <!-- Contact -->
+                    <td class="py-4">
+                        <div class="text-slate-300 font-medium">{{ user.email }}</div>
+                        <div class="text-xs text-slate-500 mt-1">{{ user.phone or 'No phone number' }}</div>
+                    </td>
+
+                    <!-- Address -->
+                    <td class="py-4 max-w-[240px]">
+                        <div class="text-xs text-slate-400 truncate-2-lines"
+                            title="{{ user.address or 'No address provided' }}">
+                            {{ user.address or 'No address provided' }}
+                        </div>
+                    </td>
+
+                    <!-- Status -->
+                    <td class="py-4">
+                        <button onclick="toggleUserStatus('{{ user.id }}', '{{ user.status }}')"
+                            id="status-badge-{{ user.id }}" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all border
+                            {% if user.status == 'active' %}
+                            bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20
+                            {% else %}
+                            bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20
+                            {% endif %}">
+                            <span
+                                class="w-1.5 h-1.5 rounded-full {% if user.status == 'active' %}bg-emerald-400{% else %}bg-red-400{% endif %}"></span>
+                            <span>{{ user.status|capitalize }}</span>
+                        </button>
+                    </td>
+
+                    <!-- Member Since -->
+                    <td class="py-4 text-xs text-slate-500 font-medium">
+                        {{ user.created_at.strftime('%Y-%m-%d') }}
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="py-4 pr-4 text-right">
+                        <button onclick="deleteUser('{{ user.id }}')"
+                            class="p-2 hover:bg-red-500/10 text-red-400 rounded-xl transition-all" title="Delete User">
+                            <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="py-12 text-center text-slate-500">No customers registered yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    async function toggleUserStatus(userId, currentStatus) {
+        const nextStatus = currentStatus === 'active' ? 'blocked' : 'active';
+        try {
+            const res = await fetch(`/admin/users/${userId}/status`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ status: nextStatus })
+            });
+            const data = await res.json();
+            if (data.success) {
+                const btn = document.getElementById(`status-badge-${userId}`);
+                if (nextStatus === 'active') {
+                    btn.className = "inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all border bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20";
+                    btn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span><span>Active</span>`;
+                } else {
+                    btn.className = "inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all border bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20";
+                    btn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span><span>Blocked</span>`;
+                }
+                btn.setAttribute("onclick", `toggleUserStatus('${userId}', '${nextStatus}')`);
+            } else {
+                alert(data.message || "Failed to update customer status.");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error toggling customer status.");
+        }
+    }
+
+    async function deleteUser(userId) {
+        if (!confirm("Are you sure you want to delete this customer account? This cannot be undone.")) return;
+        try {
+            const res = await fetch(`/admin/users/${userId}`, {
+                method: "DELETE"
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById(`row-${userId}`).remove();
+            } else {
+                alert(data.message || "Failed to delete customer.");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error deleting customer.");
+        }
+    }
+</script>
+{% endblock %}

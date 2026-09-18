@@ -1,0 +1,228 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Manage Products - NB BEADS STUDIO Admin{% endblock %}
+{% block page_title %}Product Management{% endblock %}
+
+{% block content %}
+<div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
+    <!-- Header Controls -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <form action="/admin/products" method="GET" class="w-full md:max-w-md relative">
+            <input type="text" name="search" value="{{ search }}"
+                class="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 focus:outline-none text-white pl-11 pr-4 py-3 rounded-xl transition-all placeholder-slate-600"
+                placeholder="Search products by name, SKU, tags...">
+            <div class="absolute left-4 top-3.5 text-slate-500">
+                <i data-lucide="search" class="w-5 h-5"></i>
+            </div>
+        </form>
+
+        <a href="/admin/products/add"
+            class="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold px-6 py-3.5 rounded-xl shadow-lg shadow-purple-500/20 transition-all hover:scale-[1.02]">
+            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+            <span>Add New Product</span>
+        </a>
+    </div>
+
+    <!-- Products Table -->
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-slate-800 text-slate-400 text-xs font-semibold uppercase">
+                    <th class="pb-3 pl-4">Product</th>
+                    <th class="pb-3">SKU</th>
+                    <th class="pb-3">Category</th>
+                    <th class="pb-3">Stock</th>
+                    <th class="pb-3">MRP / Sale Price</th>
+                    <th class="pb-3">Status</th>
+                    <th class="pb-3 pr-4 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/40 text-sm text-slate-300">
+                {% for prod in products %}
+                <tr id="row-{{ prod.id }}" class="hover:bg-slate-800/20 transition-all">
+                    <!-- Product Info -->
+                    <td class="py-4 pl-4">
+                        <div class="flex items-center gap-3">
+                            <img src="{{ prod.thumbnail or '/static/images/placeholder.jpg' }}" alt="{{ prod.name }}"
+                                class="w-12 h-12 rounded-xl object-cover border border-slate-800">
+                            <div>
+                                <h4 class="font-semibold text-white truncate w-48">{{ prod.name }}</h4>
+                                <div class="flex gap-1.5 mt-1.5">
+                                    {% if prod.featured %}
+                                    <span
+                                        class="text-[9px] bg-amber-500/10 border border-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">Featured</span>
+                                    {% endif %}
+                                    {% if prod.trending %}
+                                    <span
+                                        class="text-[9px] bg-blue-500/10 border border-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded">Trending</span>
+                                    {% endif %}
+                                    {% if prod.best_seller %}
+                                    <span
+                                        class="text-[9px] bg-purple-500/10 border border-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded">Bestseller</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+
+                    <!-- SKU -->
+                    <td class="py-4 font-mono text-xs text-slate-400">{{ prod.sku }}</td>
+
+                    <!-- Category -->
+                    <td class="py-4 font-medium text-slate-400">{{ prod.category }}</td>
+
+                    <!-- Stock -->
+                    <td class="py-4">
+                        {% if prod.stock <= 0 %} <span class="text-red-400 font-semibold">Out of Stock</span>
+                            {% elif prod.stock <= 5 %} <span class="text-amber-400 font-semibold">Low Stock ({{
+                                prod.stock }})</span>
+                                {% else %}
+                                <span class="text-emerald-400">{{ prod.stock }} units</span>
+                                {% endif %}
+                    </td>
+
+                    <!-- Prices -->
+                    <td class="py-4">
+                        <span class="text-xs line-through text-slate-500 mr-1.5">${{ prod.mrp }}</span>
+                        <span class="font-bold text-white">${{ prod.sale_price }}</span>
+                        <span class="text-[10px] text-emerald-400 ml-1 block">{{ prod.discount_percent }}% OFF</span>
+                    </td>
+
+                    <!-- Status Toggle -->
+                    <td class="py-4">
+                        <button onclick="toggleStatus('{{ prod.id }}', '{{ prod.status }}')"
+                            id="status-badge-{{ prod.id }}" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all border
+                            {% if prod.status == 'active' %}
+                            bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20
+                            {% else %}
+                            bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700
+                            {% endif %}">
+                            <span
+                                class="w-1.5 h-1.5 rounded-full {% if prod.status == 'active' %}bg-emerald-400{% else %}bg-slate-500{% endif %}"></span>
+                            <span>{{ prod.status|capitalize }}</span>
+                        </button>
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="py-4 pr-4 text-right">
+                        <div class="inline-flex gap-2">
+                            <button onclick="duplicateProduct('{{ prod.id }}')"
+                                class="p-2 hover:bg-indigo-500/10 text-indigo-400 rounded-xl transition-all"
+                                title="Duplicate">
+                                <i data-lucide="copy" class="w-4 h-4"></i>
+                            </button>
+                            <a href="/admin/products/edit/{{ prod.id }}"
+                                class="p-2 hover:bg-purple-500/10 text-purple-400 rounded-xl transition-all"
+                                title="Edit">
+                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                            </a>
+                            <button onclick="deleteProduct('{{ prod.id }}')"
+                                class="p-2 hover:bg-red-500/10 text-red-400 rounded-xl transition-all" title="Delete">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="py-12 text-center text-slate-500">No products found matching your search.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if pages > 1 %}
+    <div class="flex items-center justify-between border-t border-slate-800/40 mt-6 pt-6">
+        <p class="text-xs text-slate-500">Showing page {{ page }} of {{ pages }} ({{ total }} total products)</p>
+        <div class="inline-flex gap-2">
+            {% if page > 1 %}
+            <a href="/admin/products?page={{ page - 1 }}&search={{ search }}"
+                class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-all">Previous</a>
+            {% endif %}
+            {% if page < pages %} <a href="/admin/products?page={{ page + 1 }}&search={{ search }}"
+                class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-all">
+                Next</a>
+                {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // Status toggle AJAX helper
+    async function toggleStatus(productId, currentStatus) {
+        const nextStatus = currentStatus === 'active' ? 'inactive' : 'active';
+        try {
+            const res = await fetch(`/api/products/${productId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: nextStatus })
+            });
+            const data = await res.json();
+            if (data.success) {
+                // Update badge locally
+                const btn = document.getElementById(`status-badge-${productId}`);
+                if (nextStatus === 'active') {
+                    btn.className = "inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all border bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20";
+                    btn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span><span>Active</span>`;
+                } else {
+                    btn.className = "inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-all border bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700";
+                    btn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span><span>Inactive</span>`;
+                }
+                // Update onClick handler with new status
+                btn.setAttribute("onclick", `toggleStatus('${productId}', '${nextStatus}')`);
+            } else {
+                alert(data.message || "Failed to update product status.");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error toggling product status.");
+        }
+    }
+
+    // Duplicate product AJAX helper
+    async function duplicateProduct(productId) {
+        if (!confirm("Are you sure you want to duplicate this product?")) return;
+        try {
+            const res = await fetch(`/api/products/${productId}/duplicate`, {
+                method: 'POST'
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert("Product duplicated successfully! Refreshing page...");
+                window.location.reload();
+            } else {
+                alert(data.message || "Failed to duplicate product.");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error duplicating product.");
+        }
+    }
+
+    // Delete product AJAX helper
+    async function deleteProduct(productId) {
+        if (!confirm("Are you sure you want to permanently delete this product?")) return;
+        try {
+            const res = await fetch(`/api/products/${productId}`, {
+                method: 'DELETE'
+            });
+            const data = await res.json();
+            if (data.success) {
+                // Remove row locally
+                document.getElementById(`row-${productId}`).remove();
+            } else {
+                alert(data.message || "Failed to delete product.");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error deleting product.");
+        }
+    }
+</script>
+{% endblock %}
