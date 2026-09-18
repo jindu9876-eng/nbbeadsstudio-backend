@@ -56,19 +56,31 @@ app = FastAPI(
 )
 
 # 4. CORS Middleware
-origins = [
+raw_origins = getattr(settings, "CORS_ORIGINS", "*") or "*"
+if raw_origins.strip() == "*":
+    cors_origins = ["*"]
+    cors_regex = r"^https?://.*"
+else:
+    cors_origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
+    cors_regex = None
+
+default_dev_origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
+    "http://localhost:4173",
+    "http://127.0.0.1:4173",
 ]
+
+all_origins = list(set(default_dev_origins + (cors_origins if "*" not in cors_origins else [])))
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$",
+    allow_origins=["*"] if "*" in cors_origins else all_origins,
+    allow_origin_regex=cors_regex if cors_regex else r"^https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

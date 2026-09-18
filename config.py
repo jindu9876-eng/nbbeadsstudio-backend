@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     PORT: int = 8000
     HOST: str = "0.0.0.0"
     
+    # CORS Configuration (comma-separated origins or * for all)
+    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "*")
+    
     # Static files and uploads
     STATIC_DIR: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
     UPLOAD_DIR: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "uploads")
