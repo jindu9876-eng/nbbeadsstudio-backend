@@ -5,34 +5,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Settings(BaseSettings):
-    # Database Configuration (PostgreSQL)
-    DB_HOST: str = os.getenv("DB_HOST", "localhost")
-    DB_PORT: int = int(os.getenv("DB_PORT", "5432"))
-    DB_NAME: str = os.getenv("DB_NAME", "nbbeadsstudio")
-    DB_USER: str = os.getenv("DB_USER", "postgres")
-    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "YOUR_POSTGRES_PASSWORD")
+    # MongoDB Atlas Configuration
+    MONGODB_URI: str = os.getenv(
+        "MONGODB_URI", 
+        "mongodb+srv://jindu9876_db_user:<db_password>@jineee.cf8x3nc.mongodb.net/?appName=jineee&compressors=zlib"
+    )
+    DATABASE_NAME: str = os.getenv("DATABASE_NAME", "jineee")
 
-    # Legacy MongoDB fallback settings
-    MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017/neeru1")
-    DATABASE_NAME: str = os.getenv("DATABASE_NAME", "neeru1")
-    
-    @property
-    def POSTGRES_URL_ASYNC(self) -> str:
-        from urllib.parse import quote_plus
-        pwd = quote_plus(self.DB_PASSWORD)
-        return f"postgresql+asyncpg://{self.DB_USER}:{pwd}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
-
-    @property
-    def POSTGRES_URL_SYNC(self) -> str:
-        from urllib.parse import quote_plus
-        pwd = quote_plus(self.DB_PASSWORD)
-        return f"postgresql://{self.DB_USER}:{pwd}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
-
-    @property
-    def POSTGRES_SERVER_URL_ASYNC(self) -> str:
-        from urllib.parse import quote_plus
-        pwd = quote_plus(self.DB_PASSWORD)
-        return f"postgresql+asyncpg://{self.DB_USER}:{pwd}@{self.DB_HOST}:{self.DB_PORT}/postgres"
+    # JWT Configuration
     JWT_SECRET: str = os.getenv("JWT_SECRET", "supersecretjwtkey12345!")
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))

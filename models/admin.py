@@ -1,5 +1,5 @@
 from datetime import datetime
-from backend.pg_engine import Document
+from beanie import Document
 from pydantic import Field, EmailStr
 
 class Admin(Document):

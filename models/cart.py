@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Dict, Any
-from backend.pg_engine import Document
+from beanie import Document
 from pydantic import BaseModel, Field
 
 class CartItem(BaseModel):

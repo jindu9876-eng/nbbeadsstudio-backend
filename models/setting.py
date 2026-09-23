@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from backend.pg_engine import Document
+from beanie import Document
 from pydantic import Field
 
 _cached_hide_price_and_cart: bool = False
