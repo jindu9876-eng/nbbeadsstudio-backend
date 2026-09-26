@@ -128,9 +128,7 @@ class ExecuteImportPayload(BaseModel):
 async def admin_login(payload: AdminLoginPayload, response: Response):
     """Admin login via username or email."""
     # Find by username or email
-    admin = await Admin.find_one(
-        {"$or": [{"username": payload.username}, {"email": payload.username}]}
-    )
+    admin = await Admin.find_one(Admin.username == payload.username) or await Admin.find_one(Admin.email == payload.username)
     
     if not admin or not verify_password(payload.password, admin.password_hash):
         return api_response(

@@ -21,44 +21,84 @@ db_client: AsyncIOMotorClient = None
 async def init_db():
     global db_client
     logger.info(f"Initializing MongoDB connection for database '{settings.DATABASE_NAME}'...")
-    try:
-        if "<db_password>" in settings.MONGODB_URI:
-            logger.warning(
-                "MongoDB URI contains placeholder '<db_password>'. "
-                "Please provide your actual database password in backend/.env to connect to MongoDB Atlas."
+    
+    connected = False
+    if "<db_password>" not in settings.MONGODB_URI:
+        try:
+            db_client = AsyncIOMotorClient(
+                settings.MONGODB_URI,
+                serverSelectionTimeoutMS=4000
             )
+            # Test connection ping
+            await db_client.admin.command("ping")
+            logger.info("MongoDB Atlas ping connection verified.")
+            
+            # Initialize Beanie ODM
+            await init_beanie(
+                database=db_client[settings.DATABASE_NAME],
+                document_models=[
+                    Admin,
+                    User,
+                    Product,
+                    Category,
+                    Order,
+                    Wishlist,
+                    Cart,
+                    Banner,
+                    SystemSetting
+                ]
+            )
+            logger.info(f"MongoDB and Beanie ODM initialized successfully with Atlas for database '{settings.DATABASE_NAME}'.")
+            connected = True
+        except Exception as e:
+            logger.warning(f"Failed to connect to MongoDB Atlas ({e}). Falling back to local in-memory store...")
+
+    if not connected:
+        try:
+            import mongomock
+            from mongomock_motor import AsyncMongoMockClient
+
+            # Patch mongomock Database.list_collection_names to accept Beanie ODM kwargs
+            orig_list_colls = mongomock.Database.list_collection_names
+            def patched_list_colls(self, *args, **kwargs):
+                kwargs.pop("authorizedCollections", None)
+                kwargs.pop("filter", None)
+                return orig_list_colls(self)
+            mongomock.Database.list_collection_names = patched_list_colls
+
+            logger.info(
+                "Running in local in-memory database mode (mongomock). "
+                "To connect to your live MongoDB Atlas cluster, update MONGODB_URI in backend/.env."
+            )
+            db_client = AsyncMongoMockClient()
+            await init_beanie(
+                database=db_client[settings.DATABASE_NAME],
+                document_models=[
+                    Admin,
+                    User,
+                    Product,
+                    Category,
+                    Order,
+                    Wishlist,
+                    Cart,
+                    Banner,
+                    SystemSetting
+                ]
+            )
+            logger.info("Beanie ODM initialized successfully in local fallback mode.")
+            connected = True
+        except Exception as e:
+            logger.error(f"Failed to initialize fallback database: {e}", exc_info=True)
             return False
 
-        db_client = AsyncIOMotorClient(settings.MONGODB_URI)
-        
-        # Test connection ping
-        await db_client.admin.command("ping")
-        logger.info("MongoDB Atlas ping connection verified.")
-
-        # Initialize Beanie ODM
-        await init_beanie(
-            database=db_client[settings.DATABASE_NAME],
-            document_models=[
-                Admin,
-                User,
-                Product,
-                Category,
-                Order,
-                Wishlist,
-                Cart,
-                Banner,
-                SystemSetting
-            ]
-        )
-        logger.info(f"MongoDB and Beanie ODM initialized successfully for database '{settings.DATABASE_NAME}'.")
-
+    try:
         # Initialize settings and default seed data
         await get_or_create_settings()
         await seed_data()
         return True
     except Exception as e:
-        logger.error(f"Failed to connect to MongoDB / Beanie: {e}", exc_info=True)
-        return False
+        logger.error(f"Error during post-init seed: {e}", exc_info=True)
+        return True
 
 async def seed_data():
     try:
