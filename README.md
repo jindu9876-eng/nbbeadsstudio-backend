@@ -1,10 +1,10 @@
-# NB BEADS STUDIO E-Commerce FastAPI + PostgreSQL Backend
+# NB BEADS STUDIO E-Commerce FastAPI + MongoDB Backend
 
-This is the production-ready backend for the NB BEADS STUDIO E-Commerce application, built using FastAPI, asynchronous PostgreSQL engine (`asyncpg` & SQLAlchemy), and server-rendered Jinja2 templates for the admin dashboard.
+This is the production-ready backend for the NB BEADS STUDIO E-Commerce application, built using FastAPI, asynchronous MongoDB engine (Motor & Beanie ODM), and server-rendered Jinja2 templates for the admin dashboard.
 
 ## Tech Stack
 - **Python 3.10+** (FastAPI, Uvicorn, Jinja2 templates)
-- **PostgreSQL 18** (Async PostgreSQL engine with `asyncpg` and JSONB support)
+- **MongoDB Atlas** (Async Motor driver + Beanie Document ODM)
 - **Security**: JWT authentication, Bcrypt password hashing, XSS/CSRF protections, rate limiting
 - **Logging**: Rotating files (`logs/access.log`, `logs/errors.log`)
 - **Pillow**: Automatic image resizing and thumbnail generation
@@ -26,16 +26,16 @@ This is the production-ready backend for the NB BEADS STUDIO E-Commerce applicat
    ```bash
    pip install -r requirements.txt
    ```
-4. Create a `.env` file from the variables (or update `.env` directly) with your PostgreSQL connection:
+4. Create a `.env` file from the variables (or update `.env` directly) with your MongoDB connection:
    ```env
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_NAME=nbbeadsstudio
-   DB_USER=postgres
-   DB_PASSWORD=<your_postgres_password>
+   MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/?retryWrites=true&w=majority
+   DATABASE_NAME=jineee
    JWT_SECRET=supersecretjwtkey12345!
    JWT_ALGORITHM=HS256
    ACCESS_TOKEN_EXPIRE_MINUTES=1440
+   PORT=8000
+   HOST=0.0.0.0
+   CORS_ORIGINS=*
    ```
 
 ---
@@ -58,26 +58,9 @@ uvicorn app:app --reload
 
 ## Auto-Seeding Database
 On the first run (or if the database collection is empty), the application automatically seeds:
-- **1 Admin Account**
-- **5 Categories** (Jewellery, Couple Things, Macrame, Fashion, Gifts)
-- **20+ Products** (populated with product slugs, stock levels, MRPs, sale prices, and tags)
-- **10 Customers**
-- **5 Homepage/Offer Banners**
-
----
-
-## Docker Support
-You can run the application containerized alongside a MongoDB instance.
-
-1. Start container services:
-   ```bash
-   docker-compose up --build
-   ```
-2. The server will be accessible at `http://localhost:8000`.
-
----
-
-## Logging & Security
-- Access requests are logged in `logs/access.log`.
-- Server errors and tracebacks are logged in `logs/errors.log`.
-- All APIs implement unified JSON response formatting.
+- 1 Super Admin (`admin` / `admin123`)
+- 5 Product Categories (Jewellery, Couple Things, Macrame, Fashion, Gifts)
+- 10 Test Customer Users (`user1@nbbeadsstudio.com` to `user10@...`)
+- 5 Hero Promotional Banners
+- 20+ Detailed Products across all categories with prices, SKUs, inventory, and images
+- Default System Settings (Store name, currency, tax rates, contact info)
