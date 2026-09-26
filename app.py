@@ -1,13 +1,22 @@
 import os
 import sys
+import types
 import time
 import logging
 
 # Ensure the parent directory is in sys.path so 'backend.xxx' imports work
 current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
 parent_dir = os.path.dirname(current_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
+
+# If 'backend' is not in parent directory (e.g. in Vercel serverless root), alias current dir as 'backend'
+if "backend" not in sys.modules:
+    backend_pkg = types.ModuleType("backend")
+    backend_pkg.__path__ = [current_dir]
+    sys.modules["backend"] = backend_pkg
 
 from logging.handlers import RotatingFileHandler
 from fastapi import FastAPI, Request, status
@@ -21,28 +30,31 @@ from backend.config import settings
 from backend.database import init_db
 from backend.utils.response import api_response
 
-# 1. Create logs directory
-os.makedirs("logs", exist_ok=True)
-os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+# 1. Create logs & upload directories if filesystem is writable
+try:
+    os.makedirs("logs", exist_ok=True)
+    os.makedirs(settings.STATIC_DIR, exist_ok=True)
+    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+except Exception:
+    pass
 
 # 2. Configure Logging
 logging.basicConfig(level=logging.INFO)
 root_logger = logging.getLogger()
 
-# Access log file handler
-access_handler = RotatingFileHandler("logs/access.log", maxBytes=10*1024*1024, backupCount=5)
-access_handler.setLevel(logging.INFO)
-access_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-access_handler.setFormatter(access_formatter)
+try:
+    if os.path.exists("logs") and os.access("logs", os.W_OK):
+        access_handler = RotatingFileHandler("logs/access.log", maxBytes=10*1024*1024, backupCount=5)
+        access_handler.setLevel(logging.INFO)
+        access_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        root_logger.addHandler(access_handler)
 
-# Errors log file handler
-error_handler = RotatingFileHandler("logs/errors.log", maxBytes=10*1024*1024, backupCount=5)
-error_handler.setLevel(logging.ERROR)
-error_formatter = logging.Formatter('%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s')
-error_handler.setFormatter(error_formatter)
-
-root_logger.addHandler(access_handler)
-root_logger.addHandler(error_handler)
+        error_handler = RotatingFileHandler("logs/errors.log", maxBytes=10*1024*1024, backupCount=5)
+        error_handler.setLevel(logging.ERROR)
+        error_handler.setFormatter(logging.Formatter('%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s'))
+        root_logger.addHandler(error_handler)
+except Exception:
+    pass
 
 logger = logging.getLogger("app")
 
@@ -87,9 +99,19 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# 5. Request Interception Logging Middleware
+# 5. Database Initializer & Request Logging Middleware
+_db_initialized = False
+
 @app.middleware("http")
-async def logging_middleware(request: Request, call_next):
+async def app_middleware(request: Request, call_next):
+    global _db_initialized
+    if not _db_initialized:
+        try:
+            await init_db()
+            _db_initialized = True
+        except Exception as e:
+            logger.error(f"Error initializing DB in middleware: {e}")
+
     start_time = time.time()
     response = await call_next(request)
     process_time = (time.time() - start_time) * 1000
@@ -99,10 +121,13 @@ async def logging_middleware(request: Request, call_next):
     logger.info(f"{client_ip} - \"{request.method} {request.url.path}\" {response.status_code} - {process_time:.2f}ms")
     return response
 
-# 6. Database Initialization on Startup
+# 6. Database Initialization on Startup (for uvicorn servers)
 @app.on_event("startup")
 async def on_startup():
-    await init_db()
+    global _db_initialized
+    if not _db_initialized:
+        await init_db()
+        _db_initialized = True
 
 # 7. Custom Exception Handlers
 @app.exception_handler(StarletteHTTPException)
@@ -130,12 +155,13 @@ async def general_exception_handler(request: Request, exc: Exception):
     return api_response(
         success=False,
         message="An unexpected server error occurred",
-        errors=str(exc) if settings.JWT_SECRET == "supersecretjwtkey12345!" else None,
+        errors=str(exc),
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
     )
 
-# 8. Mount static files directory
-app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
+# 8. Mount static files directory if available
+if os.path.exists(settings.STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
 
 # 9. Register Routers
 # Import routers inside app to avoid circular imports
