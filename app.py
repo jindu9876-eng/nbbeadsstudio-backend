@@ -26,9 +26,9 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from backend.config import settings
-from backend.database import init_db
-from backend.utils.response import api_response
+from config import settings
+from database import init_db
+from utils.response import api_response
 
 # 1. Create logs & upload directories if filesystem is writable
 try:
