@@ -6,9 +6,14 @@ from typing import Optional, Dict, Any
 from io import BytesIO
 from PIL import Image
 
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
+try:
+    import cloudinary
+    import cloudinary.uploader
+    import cloudinary.api
+    _HAS_CLOUDINARY = True
+except ImportError:
+    cloudinary = None
+    _HAS_CLOUDINARY = False
 
 from backend.config import settings
 
@@ -17,7 +22,8 @@ logger = logging.getLogger(__name__)
 # Configure Cloudinary if credentials are present
 def is_cloudinary_configured() -> bool:
     return bool(
-        settings.CLOUDINARY_CLOUD_NAME 
+        _HAS_CLOUDINARY
+        and settings.CLOUDINARY_CLOUD_NAME 
         and settings.CLOUDINARY_API_KEY 
         and settings.CLOUDINARY_API_SECRET
         and settings.CLOUDINARY_CLOUD_NAME.strip()
@@ -32,7 +38,7 @@ if is_cloudinary_configured():
     )
     logger.info("Cloudinary configured successfully.")
 else:
-    logger.info("Cloudinary credentials not provided or incomplete. Using local storage fallback for images.")
+    logger.info("Cloudinary not configured or not installed. Using local storage fallback for images.")
 
 
 def _save_local_file(content: bytes, filename: str) -> Dict[str, Any]:

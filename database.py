@@ -1,18 +1,47 @@
+import os
+import sys
+import types
 import logging
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 
-from backend.config import settings
-from backend.models.admin import Admin
-from backend.models.user import User
-from backend.models.product import Product
-from backend.models.category import Category
-from backend.models.order import Order
-from backend.models.wishlist import Wishlist
-from backend.models.cart import Cart
-from backend.models.banner import Banner
-from backend.models.setting import SystemSetting, get_or_create_settings
-from backend.utils.security import get_password_hash
+# Ensure 'backend' module is always resolvable
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+if "backend" not in sys.modules:
+    backend_pkg = types.ModuleType("backend")
+    backend_pkg.__path__ = [current_dir]
+    sys.modules["backend"] = backend_pkg
+
+# Fix for Motor 3.x / Beanie compatibility where Motor intercepts append_metadata
+if not hasattr(AsyncIOMotorClient, "append_metadata"):
+    AsyncIOMotorClient.append_metadata = lambda self, *args, **kwargs: None
+
+try:
+    from backend.config import settings
+    from backend.models.admin import Admin
+    from backend.models.user import User
+    from backend.models.product import Product
+    from backend.models.category import Category
+    from backend.models.order import Order
+    from backend.models.wishlist import Wishlist
+    from backend.models.cart import Cart
+    from backend.models.banner import Banner
+    from backend.models.setting import SystemSetting, get_or_create_settings
+    from backend.utils.security import get_password_hash
+except ModuleNotFoundError:
+    from config import settings
+    from models.admin import Admin
+    from models.user import User
+    from models.product import Product
+    from models.category import Category
+    from models.order import Order
+    from models.wishlist import Wishlist
+    from models.cart import Cart
+    from models.banner import Banner
+    from models.setting import SystemSetting, get_or_create_settings
+    from utils.security import get_password_hash
 
 logger = logging.getLogger(__name__)
 
